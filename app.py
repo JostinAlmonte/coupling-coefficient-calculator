@@ -122,13 +122,29 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
     k_pct = coupling * 100
 
     if coupling >= 0.9:
-        st.success(f"**k = {coupling:.6f}** ({k_pct:.2f}%)  — Tight coupling ✅")
+        k_color  = "#4caf50"
+        k_status = "Tight Coupling ✅"
     elif coupling >= 0.5:
-        st.warning(f"**k = {coupling:.6f}** ({k_pct:.2f}%)  — Moderate coupling ⚠️")
+        k_color  = "#f0a500"
+        k_status = "Moderate Coupling ⚠️"
     else:
-        st.error(f"**k = {coupling:.6f}** ({k_pct:.2f}%)  — Loose coupling ❌")
+        k_color  = "#e05c5c"
+        k_status = "Loose Coupling ❌"
 
-    st.progress(float(np.clip(coupling, 0, 1)))
+    st.markdown(f"""
+    <div class="result-card" style="border-left-color: {k_color};">
+        <div class="result-label">Coupling Coefficient k</div>
+        <div class="result-value" style="color: {k_color};">{coupling:.6f}</div>
+        <div style="margin-top: 6px; font-size: 13px; color: {k_color}; font-weight: 600;">
+            {k_pct:.2f}% &nbsp;—&nbsp; {k_status}
+        </div>
+        <div style="margin-top: 12px; background: #3a3a5c; border-radius: 6px; height: 8px;">
+            <div style="width: {k_pct:.2f}%; background: {k_color};
+                        height: 8px; border-radius: 6px; transition: width 0.4s ease;">
+            </div>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.divider()
 
