@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import sympy as sp
+import cmath
 
 # --- Page Config ---
 st.set_page_config(
@@ -76,30 +77,70 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
     ]
     solution = sp.solve(eqns, [Llk_sym, ne_sym])
 
-    # Pick positive real solution
+    # --- Solution picking (3-tier priority) ---
+    # Tier 1: positive real solution
+    # Tier 2: any real solution (negative values — still usable, show warning)
+    # Tier 3: complex/imaginary solution — show flagged result
     Llk_val, ne_val = None, None
+    result_type = "normal"  # "normal" | "negative" | "imaginary"
+
     for sol in solution:
         llk_num = complex(sp.N(sol[0]))
         ne_num  = complex(sp.N(sol[1]))
         if (llk_num.real > 0 and abs(llk_num.imag) < 1e-6
                 and ne_num.real > 0 and abs(ne_num.imag) < 1e-6):
-            Llk_val = float(llk_num.real)
-            ne_val  = float(ne_num.real)
+            Llk_val = llk_num
+            ne_val  = ne_num
+            result_type = "normal"
             break
 
     if Llk_val is None:
-        st.error("❌ No positive real solution found. Please check your input values.")
+        for sol in solution:
+            llk_num = complex(sp.N(sol[0]))
+            ne_num  = complex(sp.N(sol[1]))
+            if abs(llk_num.imag) < 1e-6 and abs(ne_num.imag) < 1e-6:
+                Llk_val = llk_num
+                ne_val  = ne_num
+                result_type = "negative"
+                break
+
+    if Llk_val is None and solution:
+        llk_num = complex(sp.N(solution[0][0]))
+        ne_num  = complex(sp.N(solution[0][1]))
+        Llk_val = llk_num
+        ne_val  = ne_num
+        result_type = "imaginary"
+
+    if Llk_val is None:
+        st.error("❌ No solution found. Please check your input values.")
         st.stop()
 
-    # Build inductance matrix
-    L11 = Lopsec
+    # Helper: format a complex number for display
+    def fmt_val(val, decimals=2):
+        if abs(val.imag) > 1e-6:
+            sign = "+" if val.imag >= 0 else "−"
+            return f"{val.real:.{decimals}f} {sign} {abs(val.imag):.{decimals}f}j"
+        return f"{val.real:.{decimals}f}"
+
+    # Build inductance matrix (using complex arithmetic throughout)
+    L11 = complex(Lopsec)
     L12 = ne_val * Lmag
     L21 = ne_val * Lmag
     L22 = ne_val**2 * (Lmag + Llk_val)
-    coupling = L12 / np.sqrt(L11 * L22)
+    denom = cmath.sqrt(L11 * L22)
+    coupling = L12 / denom if abs(denom) > 1e-12 else complex(0)
 
     # --- Results ---
     st.subheader("📤 Results")
+
+    # Banner for non-normal results
+    if result_type == "negative":
+        st.warning("⚠️ No positive solution found — negative values returned. Results may not be physically meaningful.")
+    elif result_type == "imaginary":
+        st.warning("⚠️ Solution contains imaginary components. Results are shown with complex notation.")
+
+    # Imaginary tag for labels
+    imag_tag = ' &nbsp;<span style="font-size:11px;background:#fef3c7;color:#92400e;border-radius:4px;padding:2px 6px;font-weight:700;">IMAGINARY</span>' if result_type == "imaginary" else ""
 
     st.markdown(f"""
     <div class="result-card">
@@ -107,12 +148,12 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
         <div class="result-value">{Lmag:.2f} nH</div>
     </div>
     <div class="result-card">
-        <div class="result-label">Llk — Leakage Inductance (nH)</div>
-        <div class="result-value">{Llk_val:.2f} nH</div>
+        <div class="result-label">Llk — Leakage Inductance (nH){imag_tag}</div>
+        <div class="result-value">{fmt_val(Llk_val, 2)} nH</div>
     </div>
     <div class="result-card">
-        <div class="result-label">ne — Turns Ratio</div>
-        <div class="result-value">{ne_val:.6f}</div>
+        <div class="result-label">ne — Turns Ratio{imag_tag}</div>
+        <div class="result-value">{fmt_val(ne_val, 6)}</div>
     </div>
     """, unsafe_allow_html=True)
 
@@ -120,27 +161,40 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
 
     # Coupling coefficient with color indicator
     st.subheader("🔗 Coupling Coefficient  k")
-    k_pct = coupling * 100
 
-    if coupling >= 0.9:
+    k_is_imaginary = abs(coupling.imag) > 1e-6
+    k_display      = fmt_val(coupling, 6)
+    k_real         = coupling.real
+    k_pct          = abs(coupling) * 100  # use magnitude for progress bar
+
+    if k_is_imaginary:
+        k_color  = "#7c3aed"
+        k_status = "Imaginary Result 🔮"
+        bar_pct  = min(k_pct, 100)
+    elif k_real >= 0.9:
         k_color  = "#4caf50"
         k_status = "Tight Coupling ✅"
-    elif coupling >= 0.5:
+        bar_pct  = k_real * 100
+    elif k_real >= 0.5:
         k_color  = "#f0a500"
         k_status = "Moderate Coupling ⚠️"
+        bar_pct  = k_real * 100
     else:
         k_color  = "#e05c5c"
         k_status = "Loose Coupling ❌"
+        bar_pct  = max(k_real * 100, 0)
+
+    k_pct_label = f"{coupling.real * 100:.2f}%" if not k_is_imaginary else f"|k| = {abs(coupling):.4f}"
 
     st.markdown(f"""
     <div class="result-card" style="border-left-color: {k_color};">
         <div class="result-label">Coupling Coefficient k</div>
-        <div class="result-value" style="color: {k_color};">{coupling:.6f}</div>
+        <div class="result-value" style="color: {k_color};">{k_display}</div>
         <div style="margin-top: 6px; font-size: 13px; color: {k_color}; font-weight: 600;">
-            {k_pct:.2f}% &nbsp;—&nbsp; {k_status}
+            {k_pct_label} &nbsp;—&nbsp; {k_status}
         </div>
         <div style="margin-top: 12px; background: #e5e7eb; border-radius: 6px; height: 8px;">
-            <div style="width: {k_pct:.2f}%; background: {k_color};
+            <div style="width: {min(bar_pct, 100):.2f}%; background: {k_color};
                         height: 8px; border-radius: 6px; transition: width 0.4s ease;">
             </div>
         </div>
@@ -153,8 +207,8 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
     st.subheader("🧮 Inductance Matrix (nH)")
     st.table({
         "": ["L11 (sec self)", "L21 (mutual)"],
-        "Col 1": [f"{L11:.4f}", f"{L21:.4f}"],
-        "Col 2": [f"{L12:.4f}", f"{L22:.4f}"],
+        "Col 1": [fmt_val(L11, 4), fmt_val(L21, 4)],
+        "Col 2": [fmt_val(L12, 4), fmt_val(L22, 4)],
     })
 
     st.divider()
