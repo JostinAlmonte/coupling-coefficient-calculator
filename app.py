@@ -74,7 +74,7 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
 
     r1, r2, r3 = st.columns(3)
     r1.metric("Lmag", f"{Lmag:.2f} nH")
-    r2.metric("Llk (Leakage)", f"{Llk_val:.4f} nH")
+    r2.metric("Llk (Leakage) (nH)", f"{Llk_val:.4f} nH")
     r3.metric("ne (Turns Ratio)", f"{ne_val:.6f}")
 
     st.divider()
