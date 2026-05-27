@@ -13,6 +13,34 @@ st.title("⚡ Transformer Coupling Coefficient Calculator")
 st.caption("Cantilever (T-circuit) Model  |  sec = Rx  |  pri = Tx")
 st.divider()
 
+# --- Global Styles ---
+st.markdown("""
+<style>
+.result-card {
+    background-color: #1e1e2e;
+    border: 1px solid #3a3a5c;
+    border-left: 5px solid #4f8ef7;
+    border-radius: 10px;
+    padding: 16px 24px;
+    margin-bottom: 14px;
+}
+.result-label {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #9a9abf;
+    margin-bottom: 4px;
+}
+.result-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: #e8e8f0;
+    letter-spacing: 0.02em;
+}
+</style>
+""", unsafe_allow_html=True)
+
 # --- Input Section ---
 st.subheader("📥 Input Measurements (nH)")
 
@@ -72,9 +100,20 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
     # --- Results ---
     st.subheader("📤 Results")
 
-    st.metric("Lmag (nH)", f"{Lmag:.2f} nH")
-    st.metric("Llk (Leakage) (nH)", f"{Llk_val:.4f} nH")
-    st.metric("ne (Turns Ratio)", f"{ne_val:.6f}")
+    st.markdown(f"""
+    <div class="result-card">
+        <div class="result-label">Lmag (nH)</div>
+        <div class="result-value">{Lmag:.2f} nH</div>
+    </div>
+    <div class="result-card">
+        <div class="result-label">Llk — Leakage Inductance (nH)</div>
+        <div class="result-value">{Llk_val:.2f} nH</div>
+    </div>
+    <div class="result-card">
+        <div class="result-label">ne — Turns Ratio</div>
+        <div class="result-value">{ne_val:.6f}</div>
+    </div>
+    """, unsafe_allow_html=True)
 
     st.divider()
 
