@@ -17,25 +17,26 @@ st.divider()
 st.markdown("""
 <style>
 .result-card {
-    background-color: #1e1e2e;
-    border: 1px solid #3a3a5c;
+    background-color: #ffffff;
+    border: 1px solid #e0e0e0;
     border-left: 5px solid #4f8ef7;
     border-radius: 10px;
     padding: 16px 24px;
     margin-bottom: 14px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.06);
 }
 .result-label {
     font-size: 13px;
     font-weight: 600;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: #9a9abf;
+    color: #6b7280;
     margin-bottom: 4px;
 }
 .result-value {
     font-size: 28px;
     font-weight: 700;
-    color: #e8e8f0;
+    color: #111827;
     letter-spacing: 0.02em;
 }
 </style>
@@ -138,7 +139,7 @@ if st.button("🔢 Calculate", use_container_width=True, type="primary"):
         <div style="margin-top: 6px; font-size: 13px; color: {k_color}; font-weight: 600;">
             {k_pct:.2f}% &nbsp;—&nbsp; {k_status}
         </div>
-        <div style="margin-top: 12px; background: #3a3a5c; border-radius: 6px; height: 8px;">
+        <div style="margin-top: 12px; background: #e5e7eb; border-radius: 6px; height: 8px;">
             <div style="width: {k_pct:.2f}%; background: {k_color};
                         height: 8px; border-radius: 6px; transition: width 0.4s ease;">
             </div>
