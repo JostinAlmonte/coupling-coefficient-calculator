@@ -4,6 +4,8 @@ A web app for calculating the **coupling coefficient** of a transformer using th
 
 Built with Python and Streamlit.
 
+![App Screenshot](screenshot.png)
+
 ---
 
 ## 🌐 Live App
